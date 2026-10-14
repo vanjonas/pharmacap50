@@ -99,7 +99,8 @@ if spx_daily:
     start = spx_daily[0][0]
     spx = [x for x in monthly if x[0] < start] + spx_daily
     daily_from = start
-    sources.append("标普500:日收盘之前的时段用 Shiller 月度均价")
+    if start > 19280101:
+        sources.append("标普500:日收盘之前的时段用 Shiller 月度均价")
 else:
     spx, daily_from = monthly, None
     sources.append("标普500:Shiller 月度序列(datasets/s-and-p-500)")
@@ -110,7 +111,7 @@ notes.append(f"标普500股息率在 {last_div // 100}-{last_div % 100:02d} 之�
 # ---------- 纳指100 ----------
 ndx_daily, ndx_src = daily("^NDX", "^ndx", "NASDAQ100")
 if ndx_daily:
-    ndx = {"d": [x[0] for x in ndx_daily], "p": [x[1] for x in ndx_daily],
+    ndx = {"d": [x[0] for x in ndx_daily], "p": [round(x[1], 2) for x in ndx_daily],
            "dailyFrom": ndx_daily[0][0], "divy": [], "divyDefault": 0.007}
     sources.append(f"纳指100:{ndx_src} 日收盘(1985-10 起)")
     notes.append("纳指100股息率按 0.7% 估算")
