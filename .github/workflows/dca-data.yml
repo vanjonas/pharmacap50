@@ -1,0 +1,29 @@
+name: DCA simulator data
+
+on:
+  schedule:
+    - cron: "30 23 * * *"   # 07:30 北京时间
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  refresh:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - name: Generate data.json
+        run: python3 dca-simulator/gen.py dca-simulator/data.json
+      - name: Commit if changed
+        run: |
+          git add dca-simulator/data.json
+          if git diff --cached --quiet; then echo "no change"; exit 0; fi
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git commit -m "dca-simulator: refresh data $(date -u +%F)"
+          git pull --rebase origin main
+          git push
