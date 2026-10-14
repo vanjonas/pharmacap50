@@ -16,6 +16,35 @@ def get(url, timeout=60):
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": UA}), timeout=timeout) as r:
         return r.read().decode("utf-8")
 
+def yf_lib(symbol):
+    """用 yfinance(curl_cffi 模拟浏览器)取全部日收盘,失败返回 None。"""
+    try:
+        import yfinance
+        h = yfinance.Ticker(symbol).history(period="max", interval="1d", auto_adjust=False)
+        out = [(int(i.strftime("%Y%m%d")), float(c)) for i, c in h["Close"].dropna().items()]
+        return out or None
+    except Exception as e:
+        print(f"yfinance {symbol} 不可用: {e}", file=sys.stderr)
+        return None
+
+def stooq(symbol):
+    try:
+        rows = list(csv.DictReader(io.StringIO(get(f"https://stooq.com/q/d/l/?s={symbol}&i=d", 30))))
+        out = [(ymd(r["Date"]), float(r["Close"])) for r in rows if r.get("Close")]
+        return out or None
+    except Exception as e:
+        print(f"Stooq {symbol} 不可用: {e}", file=sys.stderr)
+        return None
+
+def daily(yahoo_sym, stooq_sym, fred_id):
+    """依次尝试 yfinance、Yahoo 接口、Stooq、FRED,返回 (数据, 来源名)。"""
+    for name, fn in (("Yahoo Finance", lambda: yf_lib(yahoo_sym)), ("Yahoo Finance", lambda: yahoo(yahoo_sym)),
+                     ("Stooq", lambda: stooq(stooq_sym)), ("FRED", lambda: fred(fred_id))):
+        d = fn()
+        if d:
+            return d, name
+    return None, None
+
 def yahoo(symbol):
     """Yahoo Finance 日收盘 [(yyyymmdd, close)],失败返回 None。"""
     url = ("https://query1.finance.yahoo.com/v8/finance/chart/" + urllib.parse.quote(symbol)
@@ -63,13 +92,9 @@ for r in sh:
     if d > 0:
         divy.append((y * 100 + m, round(d / p, 5)))
 last_div = divy[-1][0]
-spx_daily = yahoo("^GSPC")
+spx_daily, spx_src = daily("^GSPC", "^spx", "SP500")
 if spx_daily:
-    sources.append("标普500:Yahoo Finance 日收盘")
-else:
-    spx_daily = fred("SP500")
-    if spx_daily:
-        sources.append("标普500:FRED 日收盘(近10年)")
+    sources.append(f"标普500:{spx_src} 日收盘")
 if spx_daily:
     start = spx_daily[0][0]
     spx = [x for x in monthly if x[0] < start] + spx_daily
@@ -83,10 +108,7 @@ spx_last = spx[-1][0]
 notes.append(f"标普500股息率在 {last_div // 100}-{last_div % 100:02d} 之后按 1.3% 估算")
 
 # ---------- 纳指100 ----------
-ndx_daily = yahoo("^NDX")
-ndx_src = "Yahoo Finance"
-if not ndx_daily:
-    ndx_daily, ndx_src = fred("NASDAQ100"), "FRED"
+ndx_daily, ndx_src = daily("^NDX", "^ndx", "NASDAQ100")
 if ndx_daily:
     ndx = {"d": [x[0] for x in ndx_daily], "p": [x[1] for x in ndx_daily],
            "dailyFrom": ndx_daily[0][0], "divy": [], "divyDefault": 0.007}
