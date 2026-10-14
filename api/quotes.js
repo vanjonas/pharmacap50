@@ -22,17 +22,26 @@ export async function fetchYahoo(symbol) {
   };
 }
 
+// 依次尝试候选代码，返回第一个有效报价及其代码
+async function firstQuote(candidates, getQuote) {
+  let err;
+  for (const symbol of candidates) {
+    try { const q = await getQuote(symbol); if (q.prevClose && Math.abs(q.price / q.prevClose - 1) < 0.5) return { ...q, symbol }; }
+    catch (e) { err = e; }
+  }
+  throw err || new Error("no valid quote");
+}
+
 export async function buildQuotes(market, getQuote) {
-  const settled = await Promise.allSettled(market.rows.map(r => getQuote(toYahoo(r.ticker))));
+  const settled = await Promise.allSettled(market.rows.map(r => firstQuote(toYahoo(r.ticker), getQuote)));
   const out = {};
   market.rows.forEach((r, i) => {
     const s = settled[i];
-    if (s.status !== "fulfilled" || !s.value.prevClose) return;
+    if (s.status !== "fulfilled") return;               // 取不到或报价异常（拆股、错价），页面回退到日更
     const q = s.value;
     const ratio = q.price / q.prevClose;
-    if (!(ratio > 0.5 && ratio < 1.5)) return;          // 异常报价（拆股、错价）丢弃，页面回退到日更
     out[r.ticker] = {
-      symbol: toYahoo(r.ticker), price: q.price, currency: q.currency,
+      symbol: q.symbol, price: q.price, currency: q.currency,
       changePct: (ratio - 1) * 100, capUSD: r.capUSD * ratio, ts: q.ts,
     };
   });
