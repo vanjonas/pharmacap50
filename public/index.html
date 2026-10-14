@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>PharmaCap 50</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600&family=Noto+Sans+SC:wght@400;500;700&family=Noto+Serif+SC:wght@700;900&display=swap">
+<style>
+[hidden]{display:none!important}
+html{color-scheme:light}
+body{margin:0}
+
+/* Layout: a terminal-style ledger. Morning brief strip on top, ranking ledger below, detail drawer on the right (bottom sheet on phones). */
+:root{
+  --bg:#f3f5f4; --panel:#ffffff; --ink:#14201d; --muted:#5f6d69; --line:#d9e0dd;
+  --accent:#0f5c4e; --accent-soft:#e1efeb; --up:#c8312b; --down:#16884a; --chip:#eef2f0;
+  --f-display:"Noto Serif SC","Songti SC",serif;
+  --f-body:"Noto Sans SC","PingFang SC","Microsoft YaHei",system-ui,sans-serif;
+  --f-num:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#0e1513; --panel:#152020; --ink:#e3ebe8; --muted:#90a19c; --line:#26342f;
+  --accent:#5cc2a8; --accent-soft:#1a302a; --up:#f0625a; --down:#3fbf78; --chip:#1c2a27; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#0e1513; --panel:#152020; --ink:#e3ebe8; --muted:#90a19c; --line:#26342f;
+  --accent:#5cc2a8; --accent-soft:#1a302a; --up:#f0625a; --down:#3fbf78; --chip:#1c2a27; color-scheme:dark}
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--f-body);font-size:14px;line-height:1.55;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:20px 48px}
+.wrap{max-width:1180px;margin:0 auto;display:flex;flex-direction:column;gap:20px}
+header{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:12px;border-bottom:2px solid var(--ink);padding-bottom:12px}
+h1{font-family:var(--f-display);font-weight:900;font-size:clamp(26px,4vw,38px);margin:0;letter-spacing:.01em;line-height:1.1}
+h1 small{display:block;font-family:var(--f-body);font-weight:500;font-size:13px;color:var(--muted);letter-spacing:.04em;margin-top:6px}
+.stamp{font-family:var(--f-num);font-size:12px;color:var(--muted);text-align:right;display:flex;flex-direction:column;gap:2px}
+.stamp b{color:var(--ink);font-weight:600}
+.live{display:inline-flex;align-items:center;gap:6px}
+.dot{width:8px;height:8px;border-radius:50%;background:var(--muted)}
+.dot.ok{background:var(--accent)}
+h2{font-family:var(--f-display);font-size:19px;margin:0;display:flex;align-items:baseline;gap:10px;text-wrap:balance}
+h2 .sub{font-family:var(--f-body);font-weight:400;font-size:12px;color:var(--muted)}
+.brief{background:var(--panel);border:1px solid var(--line);border-radius:6px;padding:16px;display:flex;flex-direction:column;gap:12px}
+.hl{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:10px}
+.hl[data-more="0"] a:nth-of-type(n+7){display:none}
+.more{font:inherit;font-size:13px;align-self:flex-start;border:0;background:none;color:var(--accent);cursor:pointer;padding:0}
+.hl a{display:flex;flex-direction:column;gap:4px;padding:10px 12px;border:1px solid var(--line);border-radius:4px;text-decoration:none;color:inherit;min-width:0}
+.hl a:hover,.hl a:focus-visible{border-color:var(--accent);outline:none}
+.tag{font-size:11px;letter-spacing:.06em;font-weight:500;padding:1px 6px;border-radius:3px;background:var(--chip);color:var(--muted);align-self:flex-start}
+.tag.filing{background:var(--accent-soft);color:var(--accent)}
+.hl .who{font-size:12px;color:var(--muted);display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.hl .t{font-weight:500;overflow-wrap:anywhere}
+.hl .s{font-size:12.5px;color:var(--muted)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
+.seg{display:flex;flex-wrap:wrap;gap:4px}
+.seg button{font:inherit;font-size:13px;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:4px 10px;border-radius:3px;cursor:pointer}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+input[type=search]{font:inherit;border:1px solid var(--line);background:var(--panel);color:var(--ink);padding:5px 10px;border-radius:3px;min-width:0;flex:1 1 180px;max-width:280px}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.tablebox{overflow-x:auto;background:var(--panel);border:1px solid var(--line);border-radius:6px}
+table{width:100%;border-collapse:collapse;min-width:640px}
+th,td{padding:9px 12px;text-align:left;border-bottom:1px solid var(--line);white-space:nowrap}
+th{font-size:11.5px;letter-spacing:.06em;color:var(--muted);font-weight:500;cursor:pointer;user-select:none;position:sticky;top:0;background:var(--panel)}
+th.r,td.r{text-align:right}
+td.num{font-family:var(--f-num);font-variant-numeric:tabular-nums}
+tbody tr{cursor:pointer}
+tbody tr:hover{background:var(--accent-soft)}
+tbody tr:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.rk{font-family:var(--f-num);font-weight:600;width:44px}
+.nm{display:flex;flex-direction:column}
+.nm span{font-size:12px;color:var(--muted);font-family:var(--f-num)}
+.up{color:var(--up)} .down{color:var(--down)} .flat{color:var(--muted)}
+.bar{height:4px;background:var(--chip);border-radius:2px;margin-top:4px;width:120px;margin-left:auto}
+.bar i{display:block;height:100%;background:var(--accent);border-radius:2px}
+.flag{display:inline-block;font-size:11px;padding:0 5px;border-radius:3px;background:var(--accent-soft);color:var(--accent);margin-left:6px;vertical-align:1px}
+.empty{padding:28px;text-align:center;color:var(--muted)}
+.foot{font-size:12px;color:var(--muted);display:flex;flex-direction:column;gap:4px;max-width:75ch}
+/* drawer */
+.scrim{position:fixed;inset:0;background:rgba(0,0,0,.35);z-index:5}
+aside{position:fixed;top:0;right:0;bottom:0;width:min(440px,100%);background:var(--panel);border-left:1px solid var(--line);z-index:6;
+  overflow-y:auto;padding:calc(20px + env(safe-area-inset-top,0px)) max(20px,env(safe-area-inset-right,0px)) calc(24px + env(safe-area-inset-bottom,0px)) 20px;display:flex;flex-direction:column;gap:16px}
+aside h3{font-family:var(--f-display);font-size:22px;margin:0}
+.close{position:absolute;top:calc(12px + env(safe-area-inset-top,0px));right:max(12px,env(safe-area-inset-right,0px));font:inherit;font-size:20px;border:0;background:none;color:var(--muted);cursor:pointer;padding:4px 8px}
+.kv{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.kv div{background:var(--chip);border-radius:4px;padding:8px}
+.kv small{display:block;font-size:11px;color:var(--muted)}
+.kv b{font-family:var(--f-num);font-weight:600}
+.item{border-top:1px solid var(--line);padding-top:10px;display:flex;flex-direction:column;gap:3px}
+.item a{color:var(--accent);font-weight:500;overflow-wrap:anywhere}
+.item .d{font-family:var(--f-num);font-size:12px;color:var(--muted)}
+.item p{margin:0;font-size:13px;color:var(--muted)}
+@media (max-width:560px){.stamp{text-align:left}.hl[data-more="0"] a:nth-of-type(n+4){display:none}aside{top:auto;height:85%;width:100%;border-left:0;border-top:1px solid var(--line);border-radius:10px 10px 0 0}}
+@media (prefers-reduced-motion:no-preference){aside{animation:in .18s ease-out}@keyframes in{from{transform:translateX(16px);opacity:.6}}}
+
+.lv{font-size:10px;letter-spacing:.04em;padding:0 4px;border-radius:3px;margin-left:4px;vertical-align:1px;border:1px solid var(--line);color:var(--muted)}
+.lv.on{border-color:var(--accent);color:var(--accent)}
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <h1>PharmaCap 50<small>全球医药公司市值前 50 · 财报与官网新闻每日汇总</small></h1>
+    <div class="stamp">
+      <span class="live"><span class="dot" id="dot"></span><span id="status">正在连接数据…</span></span>
+      <span>数据截至 <b id="asof">—</b></span>
+      <span id="livetxt">行情每分钟刷新 · 晨报每天 08:00 更新</span>
+    </div>
+  </header>
+
+  <section class="brief" aria-labelledby="bh">
+    <h2 id="bh">今日晨报 <span class="sub" id="bdate"></span></h2>
+    <div class="hl" id="hl" data-more="0"><div class="empty">晨报生成后会显示在这里：过去 48 小时内新发布的财报和官网新闻。</div></div>
+  </section>
+
+  <section style="display:flex;flex-direction:column;gap:10px" aria-labelledby="rh">
+    <h2 id="rh">市值排名 <span class="sub">美元计 · 点击公司查看最新财报和新闻</span></h2>
+    <div class="tools">
+      <div class="seg" id="regions" role="group" aria-label="地区筛选"></div>
+      <input type="search" id="q" placeholder="搜索公司或代码" aria-label="搜索公司或代码">
+    </div>
+    <div class="tablebox">
+      <table>
+        <thead><tr>
+          <th data-k="rank">排名</th><th data-k="name">公司</th><th data-k="country">地区</th>
+          <th class="r" data-k="cap">市值</th><th class="r" data-k="dcap">今日涨跌</th><th class="r" data-k="price">股价</th><th data-k="upd">动态</th>
+        </tr></thead>
+        <tbody id="tb"><tr><td colspan="7" class="empty">排名数据加载中。每天 08:00 写入当天快照后会出现在这里。</td></tr></tbody>
+      </table>
+    </div>
+  </section>
+
+  <div class="foot">
+    <span id="src">数据来源：实时报价来自 Yahoo Finance（交易所可能有 15 分钟左右延迟）；每日市值来自 companiesmarketcap.com 公开榜单（延迟报价）；财报与新闻取自各公司官网及监管披露页面，链接均指向原文。</span>
+    <span>“今日涨跌”来自实时行情，无实时报价的公司显示与前一日快照的市值变化；标“日更”的公司市值每天更新一次。排名按实时市值重新计算，箭头为与前一日相比的名次变化。行情数据仅供参考，不构成投资建议。</span>
+  </div>
+</div>
+
+<div class="scrim" id="scrim" hidden></div>
+<aside id="drawer" hidden aria-modal="true" role="dialog" aria-labelledby="dn"></aside>
+
+<script>
+const S={base:[],live:{},rows:[],brief:null,region:"全部",q:"",sort:{k:"rank",dir:1}};
+const REG={"USA":"美国","Switzerland":"瑞士","UK":"英国","Denmark":"丹麦","France":"法国","Germany":"德国","China":"中国","Japan":"日本","Australia":"澳大利亚","Netherlands":"荷兰","Israel":"以色列","India":"印度","Belgium":"比利时","S. Korea":"韩国","Ireland":"爱尔兰","Hong Kong":"中国香港","Canada":"加拿大","Spain":"西班牙","Italy":"意大利","Sweden":"瑞典"};
+const zh=c=>REG[c]||c;
+const $=id=>document.getElementById(id);
+const esc=s=>String(s??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const safeUrl=u=>/^https?:\/\//i.test(u||"")?u:"#";
+function fmtCap(v){if(v==null)return"—";if(v>=1e12)return"$"+(v/1e12).toFixed(3)+" 万亿";return"$"+(v/1e8).toFixed(0)+" 亿"}
+function pct(a,b){if(a==null||!b)return null;return (a/b-1)*100}
+function chg(r){return r.live?r.live.changePct:pct(r.capUSD,r.prevCapUSD)}
+function merge(){
+  S.rows=S.base.map(r=>{const l=S.live[r.ticker];return l?{...r,live:l,capUSD:l.capUSD,price:fmtPrice(l)}:{...r}})
+    .sort((a,b)=>b.capUSD-a.capUSD).map((r,i)=>({...r,rank:i+1}));
+}
+function fmtPrice(l){const sym={USD:"$",EUR:"€",CHF:"CHF ",JPY:"¥",HKD:"HK$",CNY:"¥",INR:"₹",KRW:"₩",AUD:"A$"}[l.currency]||"";return sym+Number(l.price).toLocaleString("en-US",{maximumFractionDigits:2})}
+function updates(t){const c=S.brief?.companies?.[t];if(!c)return 0;return (c.filing?1:0)+(c.news?.length||0)}
+
+function regionBar(){
+  const counts={};S.rows.forEach(r=>counts[r.country]=(counts[r.country]||0)+1);
+  const keys=["全部",...Object.keys(counts).sort((a,b)=>counts[b]-counts[a])];
+  $("regions").innerHTML=keys.map(k=>`<button type="button" aria-pressed="${k===S.region}" data-r="${esc(k)}">${esc(k==="全部"?"全部":zh(k))}${k==="全部"?"":" "+counts[k]}</button>`).join("");
+}
+function render(){
+  const q=S.q.trim().toLowerCase();
+  let rows=S.rows.filter(r=>(S.region==="全部"||r.country===S.region)&&(!q||r.name.toLowerCase().includes(q)||r.ticker.toLowerCase().includes(q)||(r.nameZh||"").includes(q)));
+  const key={rank:r=>r.rank,name:r=>r.name,country:r=>r.country,cap:r=>-r.capUSD,dcap:r=>-(chg(r)??-1e9),price:r=>r.rank,upd:r=>-updates(r.ticker)}[S.sort.k];
+  rows=[...rows].sort((a,b)=>{const x=key(a),y=key(b);return (x>y?1:x<y?-1:0)*S.sort.dir});
+  const max=S.rows[0]?.capUSD||1;
+  if(!S.rows.length){return}
+  $("tb").innerHTML=rows.length?rows.map(r=>{
+    const d=chg(r);const cls=d==null?"flat":d>0?"up":d<0?"down":"flat";
+    const mv=r.prevRank?r.prevRank-r.rank:0;
+    const mvs=!r.prevRank?"":mv>0?`<span class="up">▲${mv}</span>`:mv<0?`<span class="down">▼${-mv}</span>`:"";
+    const u=updates(r.ticker);
+    return `<tr tabindex="0" data-t="${esc(r.ticker)}">
+      <td class="rk">${r.rank} ${mvs}</td>
+      <td><div class="nm">${esc(r.nameZh||r.name)}<span>${esc(r.ticker)}${r.nameZh?" · "+esc(r.name):""}</span></div></td>
+      <td>${esc(zh(r.country))}</td>
+      <td class="r num">${fmtCap(r.capUSD)}<div class="bar"><i style="width:${(r.capUSD/max*100).toFixed(1)}%"></i></div></td>
+      <td class="r num ${cls}">${d==null?"—":(d>0?"+":"")+d.toFixed(2)+"%"}</td>
+      <td class="r num">${esc(r.price||"—")}<span class="lv ${r.live?"on":""}">${r.live?"实时":"日更"}</span></td>
+      <td>${u?`<span class="flag">${u} 条更新</span>`:""}</td></tr>`}).join(""):`<tr><td colspan="7" class="empty">没有匹配的公司</td></tr>`;
+}
+function renderBrief(){
+  const b=S.brief;if(!b)return;
+  $("bdate").textContent=b.date+" 08:00 北京时间";
+  const h=b.highlights||[];
+  $("hl").innerHTML=h.length?h.map(i=>`<a href="${esc(safeUrl(i.url))}" target="_blank" rel="noopener">
+      <span class="who"><span class="tag ${i.kind==="filing"?"filing":""}">${i.kind==="filing"?"财报":"新闻"}</span>${esc(i.name)} · <span style="font-family:var(--f-num)">${esc(i.date)}</span></span>
+      <span class="t">${esc(i.title)}</span>${i.summary?`<span class="s">${esc(i.summary)}</span>`:""}</a>`).join("")
+    :`<div class="empty">过去 48 小时内这 50 家公司没有新的财报或官网新闻。</div>`;
+  let m=$("more");if(!m){m=document.createElement("button");m.id="more";m.className="more";m.type="button";$("hl").after(m);
+    m.onclick=()=>{const o=$("hl").dataset.more==="1";$("hl").dataset.more=o?"0":"1";m.textContent=o?`展开全部 ${h.length} 条`:"收起"}}
+  m.hidden=h.length<=6;m.textContent=`展开全部 ${h.length} 条`;$("hl").dataset.more="0";
+  render();
+}
+function openDrawer(t){
+  const r=S.rows.find(x=>x.ticker===t);if(!r)return;
+  const c=S.brief?.companies?.[t]||{};const d=chg(r);
+  const item=i=>`<div class="item"><span class="d">${esc(i.date||"")}</span><a href="${esc(safeUrl(i.url))}" target="_blank" rel="noopener">${esc(i.title)}</a>${i.summary?`<p>${esc(i.summary)}</p>`:""}</div>`;
+  $("drawer").innerHTML=`<button class="close" id="x" aria-label="关闭">×</button>
+    <div><h3 id="dn">${esc(r.nameZh||r.name)}</h3><div style="color:var(--muted);font-family:var(--f-num);font-size:12px">${esc(r.ticker)} · ${esc(r.name)} · ${esc(zh(r.country))}</div></div>
+    <div class="kv"><div><small>排名</small><b>#${r.rank}</b></div><div><small>市值</small><b>${fmtCap(r.capUSD)}</b></div><div><small>${r.live?"今日涨跌":"较上次"}</small><b class="${d==null?"flat":d>0?"up":"down"}">${d==null?"—":(d>0?"+":"")+d.toFixed(2)+"%"}</b></div></div>
+    <div style="display:flex;flex-direction:column;gap:8px"><h2>最新财报</h2>${c.filing?item(c.filing):`<p class="foot">暂未抓到财报披露。</p>`}</div>
+    <div style="display:flex;flex-direction:column;gap:8px"><h2>官网新闻</h2>${(c.news||[]).length?c.news.map(item).join(""):`<p class="foot">近两周没有抓到官网新闻。</p>`}</div>`;
+  $("drawer").hidden=false;$("scrim").hidden=false;$("x").focus();
+  $("x").onclick=closeDrawer;
+}
+function closeDrawer(){$("drawer").hidden=true;$("scrim").hidden=true}
+$("scrim").onclick=closeDrawer;
+document.addEventListener("keydown",e=>{if(e.key==="Escape")closeDrawer()});
+$("tb").addEventListener("click",e=>{const tr=e.target.closest("tr[data-t]");if(tr)openDrawer(tr.dataset.t)});
+$("tb").addEventListener("keydown",e=>{if(e.key==="Enter"){const tr=e.target.closest("tr[data-t]");if(tr)openDrawer(tr.dataset.t)}});
+$("regions").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;S.region=b.dataset.r;regionBar();render()});
+$("q").addEventListener("input",e=>{S.q=e.target.value;render()});
+document.querySelector("thead").addEventListener("click",e=>{const th=e.target.closest("th");if(!th)return;const k=th.dataset.k;S.sort=S.sort.k===k?{k,dir:-S.sort.dir}:{k,dir:1};render()});
+
+async function getJSON(u){const r=await fetch(u,{cache:"no-store"});if(!r.ok)throw new Error(r.status);return r.json()}
+async function loadDaily(){
+  try{const m=await getJSON("/data/market.json");S.base=m.rows||[];$("asof").textContent=m.asOf||"—";if(m.source)$("src").textContent="数据来源：实时报价来自 Yahoo Finance（部分交易所有约 15 分钟延迟）；每日"+m.source;merge();regionBar();render()}
+  catch(e){$("status").textContent="排名数据读取失败，稍后自动重试"}
+  try{S.brief=await getJSON("/data/brief.json");renderBrief()}catch(e){}
+}
+async function loadLive(){
+  try{const q=await getJSON("/api/quotes");S.live=q.quotes||{};merge();render();
+    const n=Object.keys(S.live).length;$("dot").classList.add("ok");
+    $("status").textContent=`实时行情 ${n}/${S.base.length} · ${new Date(q.updatedAt).toLocaleTimeString("zh-CN",{hour12:false})}`;}
+  catch(e){$("dot").classList.remove("ok");$("status").textContent="实时行情暂不可用，显示每日数据"}
+}
+(async()=>{await loadDaily();await loadLive();
+  setInterval(()=>{if(!document.hidden)loadLive()},60000);
+  setInterval(loadDaily,30*60000);})();
+</script>
+</body>
+</html>

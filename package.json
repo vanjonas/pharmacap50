@@ -1,0 +1,7 @@
+{
+  "name": "pharmacap50",
+  "private": true,
+  "type": "module",
+  "scripts": { "test": "node scripts/test-quotes.js" },
+  "engines": { "node": ">=18" }
+}
