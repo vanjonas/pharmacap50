@@ -2,7 +2,7 @@ name: DCA simulator data
 
 on:
   schedule:
-    - cron: "30 23 * * *"   # 07:30 北京时间
+    - cron: "15 21 * * *"   # 05:15 北京时间(GitHub 定时常延迟 1-2 小时)
   workflow_dispatch:
 
 permissions:
