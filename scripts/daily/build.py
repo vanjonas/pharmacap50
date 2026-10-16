@@ -16,7 +16,7 @@ ZH = {"LLY":"礼来","JNJ":"强生","ABBV":"艾伯维","RO.SW":"罗氏","MRK":"�
 "UCB.VI":"优时比","RVMD":"Revolution Medicines","ONC":"百济神州","4578.T":"大冢控股","SDZ.SW":"山德士","BIIB":"渤健","RPRX":"Royalty Pharma",
 "ZTS":"硕腾","068270.KS":"赛尔群","4568.T":"第一三共","ALNY":"Alnylam","WXXWY":"药明生物","WST":"西氏医药","4503.T":"安斯泰来",
 "DIVISLAB.NS":"Divi's 实验室","LH":"徕博科","3692.HK":"翰森制药","ROIV":"Roivant","UTHR":"联合治疗","BNTX":"BioNTech","1177.HK":"中国生物制药",
-"300760.SZ":"迈瑞医疗","GMAB":"Genmab","4502.T":"武田药品","NOVO-B.CO":"诺和诺德"}
+"300760.SZ":"迈瑞医疗","GMAB":"Genmab","INCY":"因赛特","4502.T":"武田药品","NOVO-B.CO":"诺和诺德"}
 def cap(s):
     s = s.replace("$","").replace(",","").strip()
     v, unit = s.split()[0], s.split()[1] if len(s.split())>1 else "B"
